@@ -1,6 +1,14 @@
 <template>
-  <div class="container">
+  <div @keyupclass="container">
     <h1>V-SNAKE</h1>
+    <div class="controls">
+      <button @click="this.handleStartBtn()" class="ctrlBtn">
+        {{ this.paused ? "\▶" : "| |" }}
+      </button>
+      <button @click="this.reset()" class="ctrlBtn">
+        {{ "\↺" }}
+      </button>
+    </div>
     <div class="game-infos">
       <span
         >score: <b>{{ this.score }}</b> &nbsp;&nbsp;</span
@@ -15,9 +23,6 @@
       :snakeCoordinates="this.snake.coordinates"
       :preyCoordinates="this.prey.coordinates"
     />
-    <button @click="this.handleStartBtn()" class="startBtn">
-      {{ this.paused ? "\▶" : "| |" }}
-    </button>
   </div>
 </template>
 
@@ -44,14 +49,14 @@ export default {
       colsCnt: 30,
       direction: "",
       snake: {
-        size: 3,
+        size: 0,
         coordinates: [],
       },
       prey: {
         coordinates: {},
       },
       paused: true,
-      movementInterval: "",
+      movementInterval: null,
     };
   },
   created() {
@@ -59,25 +64,57 @@ export default {
   },
   methods: {
     init() {
-      for (var i = 1; i <= 3; i++) {
-        this.snake.coordinates.push({ x: i, y: 1 });
+      let updatedSnake = {};
+      updatedSnake = Object.assign(updatedSnake, this.snake);
+      updatedSnake.size = 3;
+      updatedSnake.coordinates = [];
+
+      for (var i = 1; i <= updatedSnake.size; i++) {
+        updatedSnake.coordinates.push({ x: i, y: 1 });
       }
-      this.setPreyCoordinates();
+      this.snake = updatedSnake;
       this.direction = Direction.RIGHT;
+      this.setPreyCoordinates();
+      this.setupKeysEvents();
     },
     start() {
       this.paused = false;
-      this.movementInterval = setInterval(this.move(), 1000 / this.level);
+      this.movementInterval = setInterval(this.move, 1000 / this.level);
     },
     pause() {
       this.paused = true;
       clearInterval(this.movementInterval);
     },
+    reset() {
+      this.pause();
+      this.init();
+    },
     handleStartBtn() {
       if (this.paused) this.start();
       else this.pause();
     },
-    setupKeysEvents() {},
+    setupKeysEvents() {
+      window.addEventListener("keydown", event => {
+        console.log(`Key pressed: ${event.code}`);
+        switch (event.code) {
+          case "ArrowUp":
+            this.direction = Direction.UP;
+            break;
+          case "ArrowDown":
+            this.direction = Direction.DOWN;
+            break;
+          case "ArrowLeft":
+            this.direction = Direction.LEFT;
+            break;
+          case "ArrowRight":
+            this.direction = Direction.RIGHT;
+            break;
+          case "Space":
+            this.pause();
+            break;
+        }
+      });
+    },
     move() {
       if (!this.paused) {
         if (
@@ -188,9 +225,24 @@ body {
   background-color: darkslategray;
 }
 
+.container {
+  margin: auto;
+  padding: 10px;
+  width: 75%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+  opacity: 85%;
+}
+
 h1 {
+  text-align: center;
   color: lightgreen;
   font-family: Courier;
+  margin-bottom: 7px;
 }
 
 .game-infos {
@@ -203,29 +255,25 @@ h1 {
   color: yellow;
 }
 
-.container {
-  margin: auto;
-  padding: 10px;
-  width: 75%;
-  height: 100%;
+.controls {
   display: flex;
-  flex-direction: column;
-  align-content: center;
+  flex-direction: row;
   align-items: center;
-  opacity: 85%;
+  justify-content: center;
 }
 
-.startBtn {
+.ctrlBtn {
   color: lightgreen;
   text-align: center;
   vertical-align: middle;
+  margin-bottom: 7px;
   background-color: darkslategray;
   font-size: 33px;
   border: none;
   cursor: pointer;
 }
 
-.startBtn:hover {
+.ctrlBtn:hover {
   color: white;
 }
 </style>
