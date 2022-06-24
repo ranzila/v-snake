@@ -1,5 +1,6 @@
+/* eslint-disable prettier/prettier */ /* eslint-disable prettier/prettier */
 <template>
-  <div @keyupclass="container">
+  <div class="container">
     <h1>V-SNAKE</h1>
     <div class="controls">
       <button @click="this.handleStartBtn()" class="ctrlBtn">
@@ -10,23 +11,35 @@
       </button>
     </div>
     <div class="game-infos">
-      <span
-        >score: <b>{{ this.score }}</b> &nbsp;&nbsp;</span
-      >
-      <span
-        >level: <b>{{ this.level }}</b></span
-      >
+      <span>
+        score: <b>{{ this.score }}</b>
+        &nbsp;
+      </span>
+      <span>
+        level: <b>{{ this.level }}</b>
+      </span>
+      <span>
+        <button class="levelBtn">
+          {{ "\u25b2" }}
+        </button>
+      </span>
+      <span>
+        <button class="levelBtn">
+          {{ "\u25bc" }}
+        </button>
+      </span>
     </div>
     <Grid
       :rowsCnt="this.rowsCnt"
       :colsCnt="this.colsCnt"
-      :snakeCoordinates="this.snake.coordinates"
-      :preyCoordinates="this.prey.coordinates"
+      :snakeCoordinates="this.snakeCoordinates"
+      :preyCoordinates="this.preyCoordinates"
     />
   </div>
 </template>
 
 <script>
+/* eslint-disable */
 import Grid from "@/components/Grid.vue";
 import _, { isEqual } from "underscore";
 
@@ -43,18 +56,14 @@ export default {
 
   data() {
     return {
-      score: 0,
-      level: 1,
+      score: null,
+      level: null,
       rowsCnt: 30,
       colsCnt: 30,
       direction: "",
-      snake: {
-        size: 0,
-        coordinates: [],
-      },
-      prey: {
-        coordinates: {},
-      },
+      snakeCoordinates: [],
+      snakeSize: 0,
+      preyCoordinates: [],
       paused: true,
       movementInterval: null,
     };
@@ -64,16 +73,18 @@ export default {
   },
   methods: {
     init() {
-      let updatedSnake = {};
-      updatedSnake = Object.assign(updatedSnake, this.snake);
-      updatedSnake.size = 3;
-      updatedSnake.coordinates = [];
-
-      for (var i = 1; i <= updatedSnake.size; i++) {
-        updatedSnake.coordinates.push({ x: i, y: 1 });
+      let snakeCoordinates = [];
+      this.score = 0;
+      this.level = 1;
+      this.snakeSize = 3;
+      for (let i = this.snakeSize; i > 0; i--) {
+        snakeCoordinates.push({ x: i, y: 1 });
       }
-      this.snake = updatedSnake;
+      console.log("INITIAL SNAKE POSITION");
+      this.logObj(snakeCoordinates);
+      console.trace(JSON.stringify(this.snake));
       this.direction = Direction.RIGHT;
+      this.snakeCoordinates = snakeCoordinates.slice();
       this.setPreyCoordinates();
       this.setupKeysEvents();
     },
@@ -84,6 +95,9 @@ export default {
     pause() {
       this.paused = true;
       clearInterval(this.movementInterval);
+    },
+    togglePause() {
+      this.paused ? this.start() : this.pause();
     },
     reset() {
       this.pause();
@@ -110,111 +124,114 @@ export default {
             this.direction = Direction.RIGHT;
             break;
           case "Space":
-            this.pause();
+            this.togglePause();
             break;
         }
       });
     },
+    copyObj(obj) {
+      let copy = {};
+      for (const key in obj) {
+        copy[key] = obj[key];
+      }
+
+      return copy;
+    },
+    logObj(obj) {
+      console.log(`> LOG: ${JSON.stringify(obj)}`);
+    },
     move() {
       if (!this.paused) {
-        if (
-          this.direction == Direction.LEFT ||
-          this.direction == Direction.RIGHT
-        )
-          this.moveX();
-        else this.moveY();
+        console.log("BEFORE MOVE");
+        this.logObj(this.snakeCoordinates);
+        this.logObj(this.getHead());
+        let updatedCoordinates = this.snakeCoordinates.slice();
+        let prevCoord = this.copyObj(this.getHead());
 
-        if (_.isEqual(this.snake.coordinates, this.prey.coordinates)) {
+        console.log("NEW MOVE");
+        console.log(`Head of the snake is ${JSON.stringify(this.getHead())}`);
+
+        updatedCoordinates.forEach((c, i) => {
+          console.log(
+            `At IDX ${updatedCoordinates.findIndex(coord =>
+              _.isEqual(c, coord)
+            )}`
+          );
+          console.log(
+            `${JSON.stringify(c)} is ${this.isHead(c) ? "head" : "body"}`
+          );
+          if (this.isHead(c)) {
+            if (this.validateMove(c)) {
+              if (this.direction == Direction.DOWN) c.y += 1;
+              if (this.direction == Direction.UP) c.y -= 1;
+              if (this.direction == Direction.RIGHT) c.x += 1;
+              if (this.direction == Direction.LEFT) c.x -= 1;
+            } else {
+              console.error("Invalid Snake Position");
+              this.pause();
+            }
+          } else {
+            let tmpC = this.copyObj(c);
+            updatedCoordinates[i] = this.copyObj(prevCoord);
+            prevCoord = tmpC;
+          }
+        });
+
+        console.log("AFTER MOVE");
+        this.logObj(updatedCoordinates);
+
+        this.snakeCoordinates = updatedCoordinates;
+
+        if (
+          updatedCoordinates[0].x == this.preyCoordinates.x &&
+          updatedCoordinates[0].y == this.preyCoordinates.y
+        ) {
           this.score++;
           // TODO: Take into account rows & cols size
-          this.snake.size++;
+          this.snakeSize++;
+          this.setPreyCoordinates();
         }
       }
     },
-    // To Refactor, not DRY !
-    moveX() {
-      let coord = this.snake.coordinates;
-      const head = coord[0];
-      const tail = coord[this.size - 1];
-
-      if (this.direction == Direction.RIGHT) {
-        coord.forEach(c => {
-          if (c.x + 1 <= this.rowsCnt && (this.isHead(c) || c.y == head.y))
-            c.x += 1;
-          else if (c.y < head.y) c.y += 1;
-          else if (c.y > head.y) c.y -= 1;
-        });
-      } else if (this.direction == Direction.LEFT) {
-        coord.forEach(c => {
-          if (c.x - 1 >= 0 && (this.isHead(c) || c.y == head.y)) c.x -= 1;
-          else if (c.y < head.y) c.y += 1;
-          else if (c.y > head.y) c.y -= 1;
-        });
-      }
-
-      this.snake.coordinates = coord;
+    validateMove(c) {
+      return (
+        (c.x + 1 <= this.colsCnt && this.direction == Direction.RIGHT) ||
+        (c.x - 1 >= 1 && this.direction == Direction.LEFT) ||
+        (c.y + 1 <= this.rowsCnt && this.direction == Direction.DOWN) ||
+        (c.y - 1 >= 1 && this.direction == Direction.UP)
+      );
     },
-    moveY() {
-      let coord = this.snake.coordinates;
-      const head = coord[0];
-      const tail = coord[this.size - 1];
+    getPreviousCoordinates(c) {
+      let snakeCoord = this.snakeCoordinates.concat();
+      let actualIndex = snakeCoord.findIndex(
+        coord => coord.x == c.x && coord.y == c.y
+      );
 
-      if (this.direction == Direction.DOWN) {
-        coord.forEach(c => {
-          if (c.y + 1 <= this.colsCnt && (this.isHead(c) || c.x == head.x))
-            c.y += 1;
-          else if (c.x < head.x) c.x += 1;
-          else if (c.x > head.x) c.x -= 1;
-        });
-      } else if (this.direction == Direction.UP) {
-        coord.forEach(c => {
-          if (c.y - 1 >= 0 && (this.isHead(c) || c.x == head.x)) c.y -= 1;
-          else if (c.x < head.x) c.x += 1;
-          else if (c.x > head.x) c.x -= 1;
-        });
-      }
+      let prevCoord = this.copyObj(
+        snakeCoord[actualIndex > 0 ? actualIndex - 1 : 0]
+      );
 
-      this.snake.coordinates = coord;
+      return { x: prevCoord.x, y: prevCoord.y };
     },
     getHead() {
-      return this.snake.coordinates[0];
+      return this.snakeCoordinates[0];
     },
     getTail() {
-      return this.snake.coordinates[this.snake.size - 1];
+      return this.snakeCoordinates[this.snake.size - 1];
     },
     isHead(coord) {
-      _.isEqual(this.snake.coordinates[0], coord);
+      return _.isEqual(this.snakeCoordinates[0], coord);
     },
     isTail(coord) {
-      const coordLength = this.snake.coordinates.length;
-      return _.isEqual(this.snake.coordinates[coordLength - 1], coord);
+      return _.isEqual(this.snake.coordinates[this.snake.size - 1], coord);
     },
     setPreyCoordinates() {
       do {
-        this.prey.coordinates = {
+        this.preyCoordinates = {
           x: Math.floor(Math.random() * this.colsCnt),
           y: Math.floor(Math.random() * this.rowsCnt),
         };
-      } while (this.snake.coordinates.includes(this.prey.coordinates));
-    },
-  },
-  watch: {
-    snake(newSnake, oldSnake) {
-      if (newSnake.size > oldSnake.size) {
-        let newX = 0;
-        let newY = 0;
-
-        if (
-          this.direction == Direction.RIGTH &&
-          this.getTail().y == this.getHead().y
-        ) {
-          newX = this.getTail().x - 1;
-          newY = this.getTail().y;
-        }
-        let extension = { x: newX, y: newY };
-
-        this.snake.coordinates.push(extension);
-      }
+      } while (this.snakeCoordinates.includes(this.preyCoordinates));
     },
   },
 };
@@ -248,17 +265,17 @@ h1 {
 .game-infos {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
-  align-content: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  width: 50%;
   font-family: Courier;
-  font-size: 11px;
+  font-size: 33px;
   color: yellow;
 }
 
 .controls {
   display: flex;
   flex-direction: row;
-  align-items: center;
   justify-content: center;
 }
 
@@ -268,12 +285,19 @@ h1 {
   vertical-align: middle;
   margin-bottom: 7px;
   background-color: darkslategray;
-  font-size: 33px;
+  font-size: 55px;
   border: none;
   cursor: pointer;
 }
 
 .ctrlBtn:hover {
   color: white;
+}
+
+.levelBtn {
+  border: none;
+  font-size: 33px;
+  color: yellow;
+  background-color: transparent;
 }
 </style>

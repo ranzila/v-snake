@@ -12,7 +12,7 @@
 </template>
 
 <script>
-import _, { isEqual, contains } from "underscore";
+import _, { isEqual } from "underscore";
 import Cell from "@/components/Cell.vue";
 
 export default {

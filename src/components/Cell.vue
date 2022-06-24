@@ -12,18 +12,13 @@
 export default {
   name: "Cell",
   props: ["isPrey", "isSnake", "x", "y"],
-
-  created() {
-    if (this.isSnake || this.isPrey)
-      console.log("ACTIVE CELL: " + this.x + " " + this.y);
-  },
 };
 </script>
 
 <style>
 .cell {
-  width: 5px;
-  height: 5px;
+  width: 17px;
+  height: 17px;
   font-size: 7px;
   background-color: yellowgreen;
   border-color: lightgreen;
