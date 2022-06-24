@@ -1,24 +1,9 @@
-# vsnake
+# v-snake
+Classic snake game used as a 'capstone' project for my learning of the basics of VueJS 3.
 
-## Project setup
-```
-npm install
-```
+To run it, simply execute `npm run install` and `npm run serve`
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+## TODO
 
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+- [ ] Define wining conditions
+- [ ] Implement a store using the [pinia lib](https://pinia.vuejs.org/)
