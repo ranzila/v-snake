@@ -65,7 +65,7 @@ export default {
       snakeSize: 0,
       preyCoordinates: [],
       paused: true,
-      movementInterval: null,
+      movementIntervalRef: null,
     };
   },
   created() {
@@ -94,7 +94,7 @@ export default {
     },
     pause() {
       this.paused = true;
-      clearInterval(this.movementInterval);
+      clearInterval(this.movementIntervalRef);
     },
     togglePause() {
       this.paused ? this.start() : this.pause();
@@ -147,6 +147,7 @@ export default {
         this.logObj(this.getHead());
         let updatedCoordinates = this.snakeCoordinates.slice();
         let prevCoord = this.copyObj(this.getHead());
+        let errorFlag = false;
 
         console.log("NEW MOVE");
         console.log(`Head of the snake is ${JSON.stringify(this.getHead())}`);
@@ -169,6 +170,7 @@ export default {
             } else {
               console.error("Invalid Snake Position");
               this.pause();
+              errorFlag = true;
             }
           } else {
             let tmpC = this.copyObj(c);
@@ -180,16 +182,18 @@ export default {
         console.log("AFTER MOVE");
         this.logObj(updatedCoordinates);
 
-        this.snakeCoordinates = updatedCoordinates;
+        if (!errorFlag) {
+          this.snakeCoordinates = updatedCoordinates;
 
-        if (
-          updatedCoordinates[0].x == this.preyCoordinates.x &&
-          updatedCoordinates[0].y == this.preyCoordinates.y
-        ) {
-          this.score++;
-          // TODO: Take into account rows & cols size
-          this.snakeSize++;
-          this.setPreyCoordinates();
+          if (
+            updatedCoordinates[0].x == this.preyCoordinates.x &&
+            updatedCoordinates[0].y == this.preyCoordinates.y
+          ) {
+            this.score++;
+            // TODO: Take into account rows & cols size
+            this.snakeSize++;
+            this.setPreyCoordinates();
+          }
         }
       }
     },
